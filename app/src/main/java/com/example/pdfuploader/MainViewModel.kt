@@ -1,11 +1,8 @@
 package com.example.pdfuploader
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.google.gson.JsonParser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -13,12 +10,11 @@ import kotlinx.coroutines.launch
 import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
-import okhttp3.ResponseBody
-import retrofit2.Response
-import retrofit2.Callback
 import retrofit2.Call
-import java.io.File
+import retrofit2.Callback
+import retrofit2.Response
 import javax.inject.Inject
+import kotlin.random.Random
 
 @HiltViewModel
 class MainViewModel @Inject constructor(private val apiService: ApiService) : ViewModel() {
@@ -41,20 +37,33 @@ class MainViewModel @Inject constructor(private val apiService: ApiService) : Vi
             _eventChannel.send(MainEvent.Error("File is empty"))
             return@launch
         }
-        val reqBody = RequestBody.create(MediaType.parse("application/pdf"),file)
-        val formData = MultipartBody.Part.createFormData("file","amarfile.pdf",reqBody)
+        val reqBody = RequestBody.create(MediaType.parse("application/pdf"), file)
+        val formData = MultipartBody.Part.createFormData("file", "amarfile-${Random.nextInt(1,10)}.pdf", reqBody)
         apiService.uploadPdf(formData).enqueue(object :
             Callback<JsonObject> {
             override fun onResponse(call: Call<JsonObject>, response: Response<JsonObject>) {
-                if(response.isSuccessful){
-
+                if (response.isSuccessful) {
+                    uploadedSuccessful()
+                } else {
+                    uploadError("No callback")
                 }
             }
 
             override fun onFailure(call: Call<JsonObject>, t: Throwable) {
-                Log.d(TAG, "onResponse: Error ${t.toString()}")
+                uploadError(t.toString())
             }
         })
+    }
+
+
+    private fun uploadedSuccessful() = viewModelScope.launch {
+        file = null
+        _eventChannel.send(MainEvent.UploadSuccess)
+    }
+
+    private fun uploadError(error: String) = viewModelScope.launch {
+        file = null
+        _eventChannel.send(MainEvent.Error("error: $error"))
     }
 
     private fun selectedFile() = viewModelScope.launch {

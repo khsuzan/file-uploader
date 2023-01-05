@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -32,13 +33,14 @@ class MainActivity : AppCompatActivity() {
             viewModel.mainEvent.collect {
                 when (it) {
                     is MainViewModel.MainEvent.Error -> {
-
+                        Toast.makeText(this@MainActivity, it.error, Toast.LENGTH_SHORT).show()
                     }
                     is MainViewModel.MainEvent.UploadSuccess -> {
-
+                        chooseBtn.isEnabled = true
+                        uploadBtn.isEnabled = false
+                        tv.text = ""
                     }
                     is MainViewModel.MainEvent.Uploading -> {
-
                     }
                     is MainViewModel.MainEvent.FileSelected -> {
                         chooseBtn.isEnabled = false
